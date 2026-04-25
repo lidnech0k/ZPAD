@@ -1,0 +1,15 @@
+data/
+venv/
+env/
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
+.idea/
+*.csv
+*.xlsx
+*.json
+*.parquet
+.DS_Store
+Thumbs.db
