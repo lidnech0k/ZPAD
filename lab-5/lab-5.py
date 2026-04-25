@@ -25,7 +25,6 @@ def load_data(path):
     all_data = []
 
     for filename in all_files:
-        # Витягуємо ID з назви файлу: vhi_id_10_... -> беремо 10
         parts = os.path.basename(filename).split('_')
         file_id = None
         if len(parts) > 2 and parts[2].isdigit():
@@ -35,45 +34,38 @@ def load_data(path):
 
         region_name = regions_map.get(file_id, f"Область {file_id}")
 
-        # Бронебійний парсер: читаємо як звичайний текстовий файл
         with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                # Видаляємо HTML сміття
                 clean_line = line.replace('<tt><pre>', '').replace('</pre></tt>', '').strip()
                 if not clean_line:
                     continue
                 
                 parts_line = [p.strip() for p in clean_line.split(',')]
                 
-                # Шукаємо рядки, де перший елемент - це рік (4 цифри)
                 if len(parts_line) >= 7 and parts_line[0].isdigit() and len(parts_line[0]) == 4:
                     try:
                         year = int(parts_line[0])
                         week = int(parts_line[1])
-                        # В даних NOAA: індекс 4 - VCI, 5 - TCI, 6 - VHI
                         vci = float(parts_line[4])
                         tci = float(parts_line[5])
                         vhi = float(parts_line[6])
                         
                         all_data.append([year, week, vci, tci, vhi, file_id, region_name])
                     except ValueError:
-                        pass # Ігноруємо рядки з помилками
+                        pass
 
     if not all_data:
         return pd.DataFrame()
 
-    # Створюємо чистий DataFrame з жорстко заданими колонками
     df = pd.DataFrame(all_data, columns=['Year', 'Week', 'VCI', 'TCI', 'VHI', 'ID', 'Region'])
     return df
 
-# Завантаження даних
 df_raw = load_data("vhi_data")
 
 if df_raw.empty:
     st.error("Помилка: Файли не містять коректних даних. Переконайтеся, що це дані NOAA.")
     st.stop()
 
-# Логіка фільтрів
 def reset_filters():
     st.session_state['idx'] = 'VHI'
     st.session_state['reg'] = sorted(df_raw['Region'].unique())[0]
@@ -85,7 +77,6 @@ def reset_filters():
 if 'idx' not in st.session_state:
     reset_filters()
 
-# Інтерфейс
 cp, cr = st.columns([1, 3])
 
 with cp:
@@ -99,7 +90,6 @@ with cp:
         reset_filters()
         st.rerun()
 
-# Фільтрація
 df_f = df_raw[
     (df_raw['Region'] == reg) &
     (df_raw['Week'] >= w_rng[0]) & (df_raw['Week'] <= w_rng[1]) &
@@ -113,7 +103,6 @@ elif asc:
 elif dsc: 
     df_f = df_f.sort_values(idx, ascending=False)
 
-# Результати
 with cr:
     t1, t2, t3 = st.tabs(["📊 Таблиця", "📈 Графік", "🌍 Порівняння"])
     
